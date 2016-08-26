@@ -18,6 +18,9 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	public TFIDFHyperlinking() {
 	}
 	
+	
+	//TODO: public HashMap<String, HashMap<String,Double>> linkParagraphs (List<Model> paragraphs). But discuss with Julian first on the setup/what needs to be done to extend this to a paragraph approach. Don't want to jump in and potentially break things.
+	
 	@Override
 	public HashMap<String, HashMap<String,Double>> linkDocuments(List<Model> documents) {
 		HashMap<String, HashMap<String,Double>> relatednessScores = new HashMap<String, HashMap<String,Double>>();
@@ -52,6 +55,8 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	
 	public List<String> splitString(String s){
 		String[] parts = s.split(" ");
+		// Although the simple tokenizer doesn't do a whole lot more, probably a bit more sophisticated to use this here (as it will, I think, at least get rid of punctuation at the end of words):
+		//Tokenizer.SimpleTokenizeInput(s);
 		List<String> docStringList = new LinkedList<String>(); 
 		for (String p : parts) {
 			docStringList.add(p);
