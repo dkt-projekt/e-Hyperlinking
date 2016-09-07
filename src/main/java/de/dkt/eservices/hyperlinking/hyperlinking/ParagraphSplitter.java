@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking.hyperlinking;
+package de.dkt.eservices.hyperlinking.hyperlinking;
 
 import java.util.LinkedList;
 import java.util.List;

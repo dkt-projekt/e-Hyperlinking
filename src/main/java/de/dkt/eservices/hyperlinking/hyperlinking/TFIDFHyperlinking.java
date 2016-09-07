@@ -52,6 +52,8 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	
 	public List<String> splitString(String s){
 		String[] parts = s.split(" ");
+		// Although the simple tokenizer doesn't do a whole lot more, probably a bit more sophisticated to use this here (as it will, I think, at least get rid of punctuation at the end of words):
+		//Tokenizer.SimpleTokenizeInput(s);
 		List<String> docStringList = new LinkedList<String>(); 
 		for (String p : parts) {
 			docStringList.add(p);
