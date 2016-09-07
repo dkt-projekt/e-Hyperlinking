@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking.hyperlinking;
+package de.dkt.eservices.hyperlinking.hyperlinking;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -10,6 +10,7 @@ import com.hp.hpl.jena.rdf.model.Model;
 
 import de.dkt.common.niftools.NIFManagement;
 import de.dkt.common.niftools.NIFReader;
+import de.dkt.eservices.hyperlinking.hyperlinking.elements.Element;
 
 public class TFIDFHyperlinking implements Hyperlinking{
 
@@ -19,28 +20,27 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	}
 	
 	@Override
-	public HashMap<String, HashMap<String,Double>> linkDocuments(List<Model> documents) {
-		HashMap<String, HashMap<String,Double>> relatednessScores = new HashMap<String, HashMap<String,Double>>();
+	public HashMap<String, HashMap<Element,Double>> linkElements(List<Element> elements) {
+		HashMap<String, HashMap<Element,Double>> relatednessScores = new HashMap<String, HashMap<Element,Double>>();
 		try{
 			List<List<String>> stringDocuments = new LinkedList<List<String>>();
-			for (Model model : documents) {
-				String stringDoc = NIFReader.extractIsString(model);
-				stringDocuments.add(splitString(stringDoc));
+			for (Element e : elements) {
+				stringDocuments.add(splitString(e.getText()));
 			}
 
-			for (Model model1 : documents) {
-				String doc1URI = NIFManagement.extractCompleteDocumentURI(model1);
-				HashMap<String,Double> scores = new HashMap<String, Double>();
-				for (Model model2 : documents) {
-					List<String> stringDoc1 = splitString(NIFReader.extractIsString(model1));
-					List<String> stringDoc2 = splitString(NIFReader.extractIsString(model2));
-					String doc2URI = NIFManagement.extractCompleteDocumentURI(model2);
+			for (Element e1: elements) {
+				String doc1URI = e1.getElementURI();
+				HashMap<Element,Double> scores = new HashMap<Element, Double>();
+				for (Element e2: elements) {
+					List<String> stringDoc1 = splitString(e1.getText());
+					List<String> stringDoc2 = splitString(e2.getText());
+//					String doc2URI = e2.getElementURI();
 					double d = similarity(stringDoc1, stringDoc2, stringDocuments);
-					scores.put(doc2URI, d);
-					System.out.println(doc2URI +"---"+d);
+					scores.put(e2, d);
+//					System.out.println(doc2URI +"---"+d);
 				}
 				relatednessScores.put(doc1URI, scores);
-				System.out.println("\t"+doc1URI+"---"+scores);
+//				System.out.println("\t"+doc1URI+"---"+scores);
 			}
 		}
 		catch(Exception e){
@@ -66,7 +66,7 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	              result++;
 	       }
 		double d2 = result / doc.size();
-		System.out.println("\t\tTF:"+d2);
+//		System.out.println("\t\tTF:"+d2);
 	    return d2;
 	}
 	
@@ -81,7 +81,7 @@ public class TFIDFHyperlinking implements Hyperlinking{
 	        }
 	    }
 		double d2 = Math.log(docs.size() / n);
-		System.out.println("\t\tIDF:"+d2);
+//		System.out.println("\t\tIDF:"+d2);
 	    return d2;
 	}
 	
@@ -93,25 +93,13 @@ public class TFIDFHyperlinking implements Hyperlinking{
 		double similarity = 0.0;
 		for (String term : doc) {
 			double d2 = tfIdf(doc2, docs, term);
-			System.out.println("\t"+d2);
+//			System.out.println("\t"+d2);
 			similarity += d2;
 		}
-		System.out.println(similarity);
-		System.out.println(doc.size());
-		System.out.println(similarity / doc.size());
+//		System.out.println(similarity);
+//		System.out.println(doc.size());
+//		System.out.println(similarity / doc.size());
 		return similarity / doc.size();
 	}
 	
-//	public static void main(String[] args) {
-//		 
-//	    List<String> doc1 = Arrays.asList("Lorem", "ipsum", "dolor", "ipsum", "sit", "ipsum");
-//	    List<String> doc2 = Arrays.asList("Vituperata", "incorrupte", "at", "ipsum", "pro", "quo");
-//	    List<String> doc3 = Arrays.asList("Has", "persius", "disputationi", "id", "simul");
-//	    List<List<String>> documents = Arrays.asList(doc1, doc2, doc3);
-//	 
-//	    TFIDFCalculator calculator = new TFIDFCalculator();
-//	    double tfidf = calculator.tfIdf(doc1, documents, "ipsum");
-//	    System.out.println("TF-IDF (ipsum) = " + tfidf);
-//	 
-//	}
 }

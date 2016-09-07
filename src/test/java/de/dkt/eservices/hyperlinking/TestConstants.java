@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking;
+package de.dkt.eservices.hyperlinking;
 
 public class TestConstants {
 	

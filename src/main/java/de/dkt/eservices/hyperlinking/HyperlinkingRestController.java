@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking;
+package de.dkt.eservices.hyperlinking;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.hp.hpl.jena.rdf.model.Model;
 
+import de.dkt.common.exceptions.LoggedExceptions;
 import de.dkt.common.feedback.InteractionManagement;
 import de.dkt.common.niftools.NIFReader;
 import eu.freme.common.conversion.rdf.RDFConstants;
@@ -29,12 +30,12 @@ import eu.freme.common.rest.NIFParameterSet;
  *
  */
 @RestController
-public class EHyperlinkingServiceStandAlone extends BaseRestController {
+public class HyperlinkingRestController extends BaseRestController {
 
-	Logger logger = Logger.getLogger(EHyperlinkingServiceStandAlone.class);
+	Logger logger = Logger.getLogger(HyperlinkingRestController.class);
 
 	@Autowired
-	EHyperlinkingService service;
+	HyperlinkingService service;
 
 	@Autowired
 	RDFConversionService rdfConversionService;
@@ -65,6 +66,7 @@ public class EHyperlinkingServiceStandAlone extends BaseRestController {
 			@RequestHeader(value = "Content-Type", required = false) String contentTypeHeader,
 
 			@RequestParam(value = "hyperlinkingType", required = false) String hyperlinkingType,
+			@RequestParam(value = "granularity", required = false) String granularity,
 			@RequestParam(value = "limit", required = false) int limit,
 			@RequestBody(required = false) String postBody) throws Exception {
 
@@ -80,6 +82,12 @@ public class EHyperlinkingServiceStandAlone extends BaseRestController {
 		if (prefix == null) {
 			prefix = p;
 		}
+		if(input==null || input.equalsIgnoreCase("")){
+			input=postBody;
+			if(input==null || input.equalsIgnoreCase("")){
+				throw LoggedExceptions.generateLoggedBadRequestException(logger, "No input collection provided: input and body are NULL or empty.");
+			}
+		}
 //		ParameterChecker.checkNotNullOrEmpty(inputDataFormat, "input data type", logger);
         NIFParameterSet nifParameters = this.normalizeNif(input, informat, outformat, postBody, acceptHeader, contentTypeHeader, prefix);
         Model inModel = null;
@@ -87,17 +95,9 @@ public class EHyperlinkingServiceStandAlone extends BaseRestController {
 			rdfConversionService.plaintextToRDF(inModel, nifParameters.getInput(),language, nifParameters.getPrefix());
         } else {
             inModel = rdfConversionService.unserializeRDF(nifParameters.getInput(), nifParameters.getInformat());
-//        	textForProcessing = postBody;
-//            if (textForProcessing == null) {
-//    			String msg = "No text to process.";
-//    			logger.error(msg);
-//    			InteractionManagement.sendInteraction("dkt-usage@"+request.getRemoteAddr(), "error", "e-Sesame/retrieveData", "Input data is not in the proper format ...", 
-//    					"", "Exception", msg, "");
-//    			throw new BadRequestException(msg);
-//            }
         }
 		try {
-			Model outputModel = service.processDocumentsCollection(inModel, hyperlinkingType, limit);
+			Model outputModel = service.processDocumentsCollection(inModel, hyperlinkingType, granularity,limit);
 			String nifOutput = NIFReader.model2String(outputModel, RDFSerialization.TURTLE);
 			HttpHeaders responseHeaders = new HttpHeaders();
 //			System.out.println("DEBUG: output of the endpoint call: "+ outputModel);

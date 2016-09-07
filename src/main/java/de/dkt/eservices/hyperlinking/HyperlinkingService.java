@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking;
+package de.dkt.eservices.hyperlinking;
 
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -15,8 +15,10 @@ import de.dkt.common.exceptions.LoggedExceptions;
 import de.dkt.common.niftools.DKTNIF;
 import de.dkt.common.niftools.NIFManagement;
 import de.dkt.common.niftools.NIFWriter;
-import de.dkt.eservices.ehyperlinking.hyperlinking.Hyperlinking;
-import de.dkt.eservices.ehyperlinking.hyperlinking.HyperlinkingFactory;
+import de.dkt.eservices.hyperlinking.hyperlinking.Hyperlinking;
+import de.dkt.eservices.hyperlinking.hyperlinking.HyperlinkingFactory;
+import de.dkt.eservices.hyperlinking.hyperlinking.elements.Element;
+import de.dkt.eservices.hyperlinking.hyperlinking.elements.ElementExtractor;
 import eu.freme.common.exception.BadRequestException;
 
 /**
@@ -24,14 +26,14 @@ import eu.freme.common.exception.BadRequestException;
  *
  */
 @Component
-public class EHyperlinkingService {
+public class HyperlinkingService {
     
-	Logger logger = Logger.getLogger(EHyperlinkingService.class);
+	Logger logger = Logger.getLogger(HyperlinkingService.class);
 
-	public Model processDocumentsCollection(Model collectionModel,String hyperlinkingType, int limit) throws Exception {
+	public Model processDocumentsCollection(Model collectionModel,String hyperlinkingType, String granularity,int limit) throws Exception {
 		try {
 			List<Model> documents = NIFManagement.extractDocumentsModels(collectionModel);
-			List<Model> outputNIFModels = generateLinksBetweenDocuments(documents,hyperlinkingType,limit);
+			List<Model> outputNIFModels = generateLinks(documents,hyperlinkingType,granularity,limit);
 			Model outputModel = generateCollectionFromDocuments(collectionModel,outputNIFModels);
 			return outputModel;
 		} catch (BadRequestException e) {
@@ -49,7 +51,7 @@ public class EHyperlinkingService {
 		return newCollection;
 	}
 
-	private List<Model> generateLinksBetweenDocuments(List<Model> documents,String hyperlinkingType,int limit) {
+	private List<Model> generateLinks(List<Model> documents,String hyperlinkingType,String granularity,int limit) {
 		List<Model> outputList = new LinkedList<Model>();
 		Hyperlinking hl = null; 
 		try{
@@ -60,18 +62,20 @@ public class EHyperlinkingService {
 			throw LoggedExceptions.generateLoggedExternalServiceFailedException(logger, "Error generating the hyperlinking: "+hyperlinkingType);
 		}
 		
-		HashMap<String, HashMap<String,Double>> scores = hl.linkDocuments(documents);
+		List<Element> elements = ElementExtractor.extractElements(documents,granularity);
+		
+		HashMap<String, HashMap<Element,Double>> scores = hl.linkElements(elements);
 
 //		System.out.println(scores);
 		
 		for (Model d : documents) {
 			String documentUri = NIFManagement.extractCompleteDocumentURI(d);
 	        Resource documentResource = d.getResource(documentUri);
-			Set<String> keyset2 = scores.get(documentUri).keySet();
-			for (String k2 : keyset2) {
-				System.out.println("ADDING SOMETHING");
-				NIFWriter.addAnnotationUnit(d, documentUri, k2, scores.get(documentUri).get(k2));
-		        d.add(documentResource, DKTNIF.isHyperlinkedTo, d.createResource(k2));
+			Set<Element> keyset2 = scores.get(documentUri).keySet();
+			for (Element ae2 : keyset2) {
+//				System.out.println("ADDING SOMETHING");
+				NIFWriter.addAnnotationUnit(d, documentUri, ae2.getElementURI(), scores.get(documentUri).get(ae2));
+		        d.add(documentResource, DKTNIF.isHyperlinkedTo, d.createResource(ae2.getElementURI()));
 			}
 			outputList.add(d);
 		}

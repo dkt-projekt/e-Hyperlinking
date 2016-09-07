@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking;
+package de.dkt.eservices.hyperlinking;
 
 import static org.junit.Assert.assertTrue;
 
@@ -54,7 +54,7 @@ public class EHyperlinkingTest {
 	}
 	
 	@Test
-	public void test2_ProcessDocumentCollection() throws UnirestException, IOException,Exception {
+	public void test2_ProcessDocumentCollection_TFIDF() throws UnirestException, IOException,Exception {
 		BufferedReader br = FileFactory.generateBufferedReaderInstance("storage/collectionExample.nif","utf-8");
 		String content = "";
 		String line = "";
@@ -67,6 +67,29 @@ public class EHyperlinkingTest {
 //				.queryString("input", "hello world")
 				.queryString("outformat", "turtle")
 				.queryString("hyperlinkingType", "tfidf")
+				.queryString("limit", 10)
+				.body(content)
+				//.field("file", f)
+				.asString();
+		Assert.assertEquals(response.getStatus(), 200);
+		assertTrue(response.getBody().length() > 0);
+//		System.out.println(response.getBody());
+	}
+
+	@Test
+	public void test3_ProcessDocumentCollection_Ontology() throws UnirestException, IOException,Exception {
+		BufferedReader br = FileFactory.generateBufferedReaderInstance("storage/collectionExample.nif","utf-8");
+		String content = "";
+		String line = "";
+		while((line=br.readLine())!=null){
+			content += line + "\n";
+		}
+		br.close();
+		HttpResponse<String> response = processRequest()
+				.queryString("informat", "turtle")
+//				.queryString("input", "hello world")
+				.queryString("outformat", "turtle")
+				.queryString("hyperlinkingType", "ontology")
 				.queryString("limit", 10)
 				.body(content)
 				//.field("file", f)

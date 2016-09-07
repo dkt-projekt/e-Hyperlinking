@@ -1,4 +1,4 @@
-package de.dkt.eservices.ehyperlinking.hyperlinking;
+package de.dkt.eservices.hyperlinking.hyperlinking;
 
 import java.util.Date;
 import java.util.HashMap;
@@ -13,6 +13,7 @@ import com.mashape.unirest.http.Unirest;
 import de.dkt.common.exceptions.LoggedExceptions;
 import de.dkt.common.niftools.NIFManagement;
 import de.dkt.common.niftools.NIFReader;
+import de.dkt.eservices.hyperlinking.hyperlinking.elements.Element;
 import eu.freme.common.conversion.rdf.RDFConstants.RDFSerialization;
 
 public class OntologyHyperlinking implements Hyperlinking {
@@ -31,13 +32,16 @@ public class OntologyHyperlinking implements Hyperlinking {
 		this.repositoryName = repositoryName;
 	}
 	
-	public HashMap<String, HashMap<String,Double>> linkDocuments(List<Model> documents){
-		HashMap<String, HashMap<String,Double>> relatednessScores = new HashMap<String, HashMap<String,Double>>();
+	public HashMap<String, HashMap<Element,Double>> linkElements(List<Element> documents){
+		HashMap<String, HashMap<Element,Double>> relatednessScores = new HashMap<String, HashMap<Element,Double>>();
 		try{
 			String repository = repositoryName + "" + (new Date()).getTime();
 
+			System.out.println(repository);
 			//Add every model to the sesame storage.
 			for (Model model : documents) {
+				System.out.println("\tAdding model to sesame");
+				System.out.println(NIFReader.model2String(model,RDFSerialization.TURTLE));
 				if(!addModelToSesame(repository, model)){
 					System.out.println("ERROR at storing model into sesame: "+NIFManagement.extractCompleteDocumentURI(model));
 				}
@@ -45,11 +49,11 @@ public class OntologyHyperlinking implements Hyperlinking {
 			
 			for (Model model1 : documents) {
 				String doc1URI = NIFManagement.extractCompleteDocumentURI(model1);
-				HashMap<String,Double> scores = new HashMap<String, Double>();
+				HashMap<Element,Double> scores = new HashMap<Element, Double>();
 				for (Model model2 : documents) {
 					String doc2URI = NIFManagement.extractCompleteDocumentURI(model2);
 					double d = similarity(doc1URI, doc2URI, repository);
-					scores.put(doc2URI, d);
+					scores.put(new Element(doc2URI), d);
 				}
 				relatednessScores.put(doc1URI, scores);
 			}
@@ -99,20 +103,20 @@ public class OntologyHyperlinking implements Hyperlinking {
 //					.queryString("inputDataMimeType", "text/turtle")
 //					.body(NIFReader.model2String(m, RDFSerialization.TURTLE))
 //					.asString();
-			String url = "http://dev.digitale-kuratierung.de/api/e-sesame/storeData";
+			String url = "http://dev.digitale-kuratierung.de/api/e-sesame/retrieveData";
 			HttpResponse<String> response = Unirest.post(url)
 					.queryString("informat", "text/plain")
 					.queryString("input", inputSPARQLData)
 					.queryString("outformat", "application/rdf+xml")
-					.queryString("storageName", "test2")
-					.queryString("storagePath", storageName)
+					.queryString("storageName", storageName)
+//					.queryString("storagePath", storageName)
 					.queryString("inputDataFormat", "sparql")
 					.queryString("inputData", "")
 					.asString();
 			if(response.getStatus() == 200){
 				return response.getBody();
 			}
-			throw LoggedExceptions.generateLoggedExternalServiceFailedException(logger, "Error connecting to sesame endpoint.");
+			throw LoggedExceptions.generateLoggedExternalServiceFailedException(logger, "Error connecting to sesame endpoint: "+response.getBody());
 		}
 		catch(Exception e){
 			throw LoggedExceptions.generateLoggedExternalServiceFailedException(logger, "Exception at connecting to sesame endpoint: " + e.getMessage());
